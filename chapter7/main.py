@@ -124,16 +124,21 @@ def save_sample_pic(ds, name):
     pyplot.close()
     return image
 
+
 def train_disc(disc, gen, dataset, input_dims, batch):
-    (realX, realY) = generate_real_samples(dataset, batch // 2)
-    (fakeX, fakeY) = generate_fake_samples(gen, input_dims, batch // 2)
+    (realX, realY) = generate_real_samples(dataset, batch // 4)
+    (fakeX, fakeY) = generate_fake_samples(gen, input_dims, batch // 4)
 
+    loss_real, _ = disc.train_on_batch(realX, realY)
+    loss_fake, _ = disc.train_on_batch(fakeX, fakeY)
+
+    # joint training
+    (realX, realY) = generate_real_samples(dataset, batch // 4)
+    (fakeX, fakeY) = generate_fake_samples(gen, input_dims, batch // 4)
     X, Y = np.vstack((realX, fakeX)), np.vstack((realY, fakeY))
-
     loss, _ = disc.train_on_batch(X, Y)
 
-    return loss
-
+    return loss, loss_real, loss_fake
 
 def summarize_performance(disc, gen, dataset, epoch, input_dims, batch):
     # latent_points = generate_latent_points(input_dims, 16)
@@ -175,7 +180,7 @@ def train(disc, gen, gan, dataset, n_epochs, input_dims, batch, eval_frequency):
     for i in range(n_epochs):
         for j in range(n_iter):
         # for j in range(3):
-            disc_loss = train_disc(disc, gen, trainX, input_dims, batch)
+            (disc_loss, disc_loss_real, disc_loss_fake) = train_disc(disc, gen, trainX, input_dims, batch)
             gan_loss = train_gan(gan, input_dims, batch)
 
             disc_losses.append(disc_loss)
@@ -185,7 +190,9 @@ def train(disc, gen, gan, dataset, n_epochs, input_dims, batch, eval_frequency):
 
             with train_writer.as_default():
                 tf.summary.scalar("disc_loss", disc_loss, step=i * n_iter + j)
-                tf.summary.scalar("gen_loss", gan_loss, step=i * n_iter + j)
+                tf.summary.scalar("disc_loss_real", disc_loss_real, step=i * n_iter + j)
+                tf.summary.scalar("disc_loss_fake", disc_loss_fake, step=i * n_iter + j)
+                tf.summary.scalar("gan_loss", gan_loss, step=i * n_iter + j)
 
             save_trainable_vars(model=disc, writer=train_writer, step=i * n_iter + j)
 
@@ -209,10 +216,9 @@ def save_trainable_vars(model, writer, step):
 
     with writer.as_default():
         for layer in layers:
-            if "kernel" in layer.name:
-                # print("model: %10s | layer: %20s | shape: %s" % (model.name, layer.name, layer.shape))
-                weights = layer.numpy().reshape(-1)
-                tf.summary.histogram(name=f"{model.name}_{layer.name}", data=weights, step=step, buckets=100, description=f"{model.name} {layer.name} kernels")
+            # print("model: %10s | layer: %20s | shape: %s" % (model.name, layer.name, layer.shape))
+            weights = layer.numpy().reshape(-1)
+            tf.summary.histogram(name=f"{model.name}_{layer.name}", data=weights, step=step, buckets=100, description=f"{model.name} {layer.name}")
 
 
 if __name__ == '__main__':
