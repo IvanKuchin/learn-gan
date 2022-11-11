@@ -1,3 +1,6 @@
+import datetime
+import io
+
 import tensorflow as tf
 import numpy as np
 from matplotlib import pyplot
@@ -52,7 +55,7 @@ def define_gan(disc, gen):
 
 
 def generate_latent_points(batch, latent_dims):
-    rnd = np.random.randn(batch * latent_dims)
+    rnd = np.random.random(batch * latent_dims) * 2 - 1
     rnd = np.reshape(rnd, (batch, latent_dims))
     return rnd
 
@@ -71,7 +74,7 @@ def generate_real_samples(ds, batch):
     return x, y
 
 
-def train_discriminator(disc, gen, ds, latent_dims, batch):
+def train_discriminator(disc, gen, ds, batch):
     half_batch = batch // 2
     realX, realY = generate_real_samples(ds=ds, batch=half_batch)
     fakeX, fakeY = generate_fake_samples(gen=gen, batch=half_batch)
@@ -82,19 +85,68 @@ def train_discriminator(disc, gen, ds, latent_dims, batch):
 
     return loss
 
+
+def train_gan(gan, batch):
+    latent_dims = gan.input.shape[1]
+    x = generate_latent_points(batch, latent_dims)
+    y = np.ones((batch, 1))
+    loss, _ = gan.train_on_batch(x, y)
+    return loss
+
+
 def train(gen, disc, gan, cfg):
     (trainX, _), (testX, _) = cfg["dataset"]
-    trainX = trainX / 255 * 2 - 1
-    testX = testX / 255 * 2 - 1
 
     steps_per_epoch = trainX.shape[0] // cfg["batch"]
 
+    writer = create_writer(logdir="logs")
+
     for i in range(cfg["epochs"]):
         for j in range(steps_per_epoch):
-            disc_loss = train_discriminator(disc=disc, gen=gen, ds=trainX, latent_dims=cfg["latent_dims"], batch=cfg["batch"])
+        # for j in range(3):
+            disc_loss = train_discriminator(disc=disc, gen=gen, ds=trainX, batch=cfg["batch"])
+            gan_loss = train_gan(gan, batch=cfg["batch"])
 
-            print(f"{i}, {j}/{steps_per_epoch}: {disc_loss=:.3f}")
+            print(f"{i}, {j}/{steps_per_epoch}: {disc_loss=:.3f}, {gan_loss=:.3f}")
 
+        if i % cfg["eval_freq"] == 0:
+            (d_loss, g_loss, real_acc, fake_acc, image) = summarize_performance(disc=disc, gan=gan, gen=gen, cfg=cfg,
+                                                                                step=i)
+            with writer.as_default():
+                tf.summary.scalar(name="disc_loss", data=d_loss, step=i)
+                tf.summary.scalar(name="gan_loss", data=g_loss, step=i)
+                tf.summary.scalar(name="real_acc", data=real_acc, step=i)
+                tf.summary.scalar(name="fake_acc", data=fake_acc, step=i)
+                tf.summary.image(name="image", data=image, step=i)
+
+
+def create_writer(logdir):
+    ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    dir = f"{logdir}/{ts}"
+    writer = tf.summary.create_file_writer(dir)
+    return writer
+
+
+def summarize_performance(disc, gen, gan, cfg, step):
+    latent_points = generate_latent_points(cfg["batch"], gen.input.shape[1])
+
+    (trainX, _), (_, _) = cfg["dataset"]
+
+    realX, realY = generate_real_samples(trainX, cfg["batch"])
+    fakeX, fakeY = generate_fake_samples(gen, cfg["batch"])
+
+    x = np.vstack((realX, fakeX))
+    y = np.vstack((realY, fakeY))
+
+    _, real_acc = disc.evaluate(realX, realY)
+    _, fake_acc = disc.evaluate(fakeX, fakeY)
+
+    d_loss, _ = disc.evaluate(x, y)
+    g_loss, _ = gan.evaluate(latent_points, realY)
+
+    image = save_images(fakeX[:16], str(step))
+
+    return d_loss, g_loss, real_acc, fake_acc, image
 
 def save_images(ds, name):
     # normalization
@@ -110,19 +162,30 @@ def save_images(ds, name):
         pyplot.imshow(pics[i])
 
     pyplot.savefig(f"progress/{name}.png")
+
+    buf = io.BytesIO()
+    pyplot.savefig(buf, format="png")
+    buf.seek(0)
+    image = tf.image.decode_png(buf.getvalue(), channels=3)
+    image = np.expand_dims(image, 0)
+
     pyplot.close()
 
+    return image
 
 if __name__ == '__main__':
     config = {
         'latent_dims': 100,
-        'epochs': 10,
+        'epochs': 300,
         'batch': 256,
         'eval_freq': 1,
     }
 
     dataset = tf.keras.datasets.cifar10.load_data()
-    config["dataset"] = dataset
+    (trainX, _), (testX, _) = dataset
+    trainX = trainX / 255 * 2 - 1
+    testX = testX / 255 * 2 - 1
+    config["dataset"] = (trainX, _), (testX, _)
 
     d_model = define_discriminator()
     g_model = define_generator(config["latent_dims"])
