@@ -72,9 +72,9 @@ def crop_and_resize(images):
     return np.asarray(result)
 
 
-def generate_dataset(dir, dst):
+def generate_dataset(src_dir, dst_file):
     print("loading images ...")
-    images, split_id = load_images(dir)
+    images, split_id = load_images(src_dir)
     print(f"loaded images shape is {images.shape}")
     # show_images(images)
     print("crop and resizing faces ...")
@@ -83,7 +83,7 @@ def generate_dataset(dir, dst):
     # show_images(face_images)
     print("saving images to a file ...")
     start = datetime.datetime.now()
-    np.save(f"{dst}_{split_id}", face_images)
+    np.save(f"{dst_file}_{split_id}", face_images)
     print(datetime.datetime.now() - start)
     return
 
@@ -92,7 +92,7 @@ def main():
     src_dir = "dataset_images_splits"
     ds_file = "dataset_splits/celeba"
     if not(os.path.isfile(f"{ds_file}.npy")):
-        generate_dataset(dir=src_dir, dst=ds_file)
+        generate_dataset(dir=src_dir, dst_file=ds_file)
     else:
         print("dataset has already been built")
         start = datetime.datetime.now()
