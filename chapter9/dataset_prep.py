@@ -17,14 +17,18 @@ def load_image(filename):
 
 
 def load_images(dir):
+    split_id = 0
     images = []
-    for i, file in tqdm(enumerate(os.listdir(dir))):
-        image = load_image(f"{dir}/{file}")
-        images.append(image)
-        if i == 16 - 1:
-            break
+    for split_id in os.listdir(dir):
+        split_dir = f"{dir}/{split_id}"
+        for i, file in tqdm(enumerate(os.listdir(split_dir))):
+            image = load_image(f"{split_dir}/{file}")
+            images.append(image)
+            if i == 50000 - 1:
+                break
+        break
 
-    return np.asarray(images)
+    return np.asarray(images), split_id
 
 
 def show_images(img):
@@ -70,7 +74,7 @@ def crop_and_resize(images):
 
 def generate_dataset(dir, dst):
     print("loading images ...")
-    images = load_images(dir)
+    images, split_id = load_images(dir)
     print(f"loaded images shape is {images.shape}")
     # show_images(images)
     print("crop and resizing faces ...")
@@ -79,14 +83,14 @@ def generate_dataset(dir, dst):
     # show_images(face_images)
     print("saving images to a file ...")
     start = datetime.datetime.now()
-    np.save(dst, face_images)
+    np.save(f"{dst}_{split_id}", face_images)
     print(datetime.datetime.now() - start)
     return
 
 
 def main():
-    src_dir = "img_align_celeba"
-    ds_file = "dataset/celeba"
+    src_dir = "dataset_images_splits"
+    ds_file = "dataset_splits/celeba"
     if not(os.path.isfile(f"{ds_file}.npy")):
         generate_dataset(dir=src_dir, dst=ds_file)
     else:
