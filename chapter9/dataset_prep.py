@@ -92,7 +92,7 @@ def main():
     src_dir = "dataset_images_splits"
     ds_file = "dataset_splits/celeba"
     if not(os.path.isfile(f"{ds_file}.npy")):
-        generate_dataset(dir=src_dir, dst_file=ds_file)
+        generate_dataset(src_dir=src_dir, dst_file=ds_file)
     else:
         print("dataset has already been built")
         start = datetime.datetime.now()
