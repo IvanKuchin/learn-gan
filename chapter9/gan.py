@@ -1,3 +1,4 @@
+import datetime
 import io
 
 import numpy as np
@@ -205,36 +206,54 @@ def summarize_performance(disc, gen, gan, cfg, step):
     realX, realY = generate_real_samples(cfg["ds"], cfg["batch"])
     fakeX, fakeY = generate_fake_samples(gen, cfg["batch"])
 
-    _, disc_acc_real = disc.evaluate(realX, realY)
-    _, disc_acc_fake = disc.evaluate(fakeX, fakeY)
+    disc_loss_real, disc_acc_real = disc.evaluate(realX, realY)
+    disc_loss_fake, disc_acc_fake = disc.evaluate(fakeX, fakeY)
 
     x = np.vstack((realX, fakeX))
     y = np.vstack((realY, fakeY))
 
     latent_points = generate_latent_points(cfg["batch"], cfg["latent_dims"])
 
-    d_loss, _ = disc.evaluate(x, y)
+    disc_loss, _ = disc.evaluate(x, y)
     gan_loss, _ = gan.evaluate(latent_points, realY)
 
     image = save_images(fakeX[:16], f"{step:03d}")
 
+    return disc_loss, disc_loss_real, disc_loss_fake, gan_loss, disc_acc_real, disc_acc_fake, image
+
+def build_writer(logdir):
+    ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    writer = tf.summary.create_file_writer(f"{logdir}/{ts}")
+    return writer
 
 def train(gen, disc, gan, cfg):
+    writer = build_writer("logs")
     steps_per_epoch = cfg["ds"].shape[0] // cfg["batch"]
     for epoch in range(cfg["epochs"]):
         for step in range(steps_per_epoch):
+            # for step in range(3):
             d_loss_real, d_loss_fake = train_disc(gen, disc, cfg)
             gan_loss = train_gan(gan, cfg)
             print(f"{epoch}, {step}/{steps_per_epoch}: {d_loss_real=:.3f} {d_loss_fake=:.3f} {gan_loss=:.3f}")
 
+        disc_loss, disc_loss_real, disc_loss_fake, gan_loss, disc_acc_real, disc_acc_fake, image = summarize_performance(disc, gen, gan, cfg, epoch)
+        with writer.as_default():
+            tf.summary.scalar("disc_loss", disc_loss, step=epoch)
+            tf.summary.scalar("disc_loss_real", disc_loss_real, step=epoch)
+            tf.summary.scalar("disc_loss_fake", disc_loss_fake, step=epoch)
+            tf.summary.scalar("gan_loss", gan_loss, step=epoch)
+            tf.summary.scalar("disc_acc_real", disc_acc_real, step=epoch)
+            tf.summary.scalar("disc_acc_fake", disc_acc_fake, step=epoch)
+            tf.summary.image("generator", image, step=epoch)
 
-
+        if (epoch + 1) % 10 == 0:
+            gen.save(f"models/gen_{epoch+1:03d}.h5")
     return
 
 
 def main():
     cfg = {
-        "epochs": 5,
+        "epochs": 100,
         "batch": 128,
         "latent_dims": 100,
         "dataset_file": "dataset/celeba.npy",
