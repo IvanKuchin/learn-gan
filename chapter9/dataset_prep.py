@@ -79,7 +79,7 @@ def generate_dataset(src_dir, dst_file):
     # show_images(images)
     print("crop and resizing faces ...")
     face_images = crop_and_resize(images)
-    print(f"cropped images shape is {images.shape}")
+    print(f"cropped images shape is {face_images.shape}")
     # show_images(face_images)
     print("saving images to a file ...")
     start = datetime.datetime.now()
