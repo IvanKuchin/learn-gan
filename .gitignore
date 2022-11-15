@@ -1,5 +1,7 @@
 *.jpg
 *.png
 *.h5
+*.npy
+*.npz
 logs
 dataset*
