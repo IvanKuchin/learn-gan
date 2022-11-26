@@ -212,9 +212,9 @@ def main():
     disc = define_discriminator(cfg["dataset"][0].shape[1:])
     gen = define_generator(cfg["latent_dims"])
     gan = define_gan(gen, disc)
-    tf.keras.utils.plot_model(disc, "progress/disc.png", show_shapes=True)
-    tf.keras.utils.plot_model(gen, "progress/gen.png", show_shapes=True)
-    tf.keras.utils.plot_model(gan, "progress/gan.png", show_shapes=True)
+    # tf.keras.utils.plot_model(disc, "progress/disc.png", show_shapes=True)
+    # tf.keras.utils.plot_model(gen, "progress/gen.png", show_shapes=True)
+    # tf.keras.utils.plot_model(gan, "progress/gan.png", show_shapes=True)
     train(gen, disc, gan, cfg)
     return
 
