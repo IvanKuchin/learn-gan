@@ -202,7 +202,7 @@ def summarize_performance(gen, batch, name):
 
 def main():
     cfg = {
-        "epochs": 100,
+        "epochs": 2,
         "latent_dims": 100,
         "batch": 128,
         "dataset": load_dataset(),
