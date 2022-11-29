@@ -169,10 +169,10 @@ def summarize_performance(gen, cfg, epoch):
     cat_dims = cfg["category_dims"]
     latent_dims = cfg["latent_dims"]
 
-    _, latent_points, categories = generate_latent_points(batch, latent_dims, cat_dims)
-    # categories = [x for x in range(int(np.sqrt(batch))) for _ in range(int(np.sqrt(batch)))]
-    # one_hot = tf.one_hot(categories, cat_dims)
-    latent_and_cats = np.hstack([latent_points, categories])
+    _, latent_points, _ = generate_latent_points(batch, latent_dims, cat_dims)
+    categories = [x for x in range(int(np.sqrt(batch))) for _ in range(int(np.sqrt(batch)))]
+    one_hot = tf.one_hot(categories, cat_dims)
+    latent_and_cats = np.hstack([latent_points, one_hot])
 
     images = gen.predict(latent_and_cats)
 
@@ -223,7 +223,7 @@ def main():
     prep()
 
     cfg = {
-        "epochs": 100,
+        "epochs": 20,
         "batch": 64,
         "latent_dims": 62,
         "category_dims": 10,
