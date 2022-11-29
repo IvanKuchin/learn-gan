@@ -236,10 +236,10 @@ def main():
     gan = define_gan(gen, disc, aux)
     # gan.summary(show_trainable=True, expand_nested=True)
 
-    tf.keras.utils.plot_model(disc, "progress/disc.png", show_shapes=True)
-    tf.keras.utils.plot_model(aux, "progress/aux_model.png", show_shapes=True)
-    tf.keras.utils.plot_model(gen, "progress/gen.png", show_shapes=True)
-    tf.keras.utils.plot_model(gan, "progress/gan.png", show_shapes=True)
+    # tf.keras.utils.plot_model(disc, "progress/disc.png", show_shapes=True)
+    # tf.keras.utils.plot_model(aux, "progress/aux_model.png", show_shapes=True)
+    # tf.keras.utils.plot_model(gen, "progress/gen.png", show_shapes=True)
+    # tf.keras.utils.plot_model(gan, "progress/gan.png", show_shapes=True)
 
     train(gen, disc, aux, gan, cfg)
 
