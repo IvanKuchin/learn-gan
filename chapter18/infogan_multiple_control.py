@@ -215,7 +215,7 @@ def train(gen, disc, aux, gan, cfg):
         list_aux_loss2 = list()
         list_aux_loss3 = list()
 
-        for i in range(10):
+        for i in range(steps_per_epoch):
             disc_loss_real, disc_loss_fake, disc_acc_real, disc_acc_fake = train_disc(gen, disc, cfg)
             gen_loss, aux_loss1, aux_loss2, aux_loss3 = train_gen(gen, gan, cfg)
 
