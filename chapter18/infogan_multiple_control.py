@@ -215,7 +215,7 @@ def train(gen, disc, aux, gan, cfg):
         list_aux_loss2 = list()
         list_aux_loss3 = list()
 
-        for i in range(steps_per_epoch):
+        for i in range(10):
             disc_loss_real, disc_loss_fake, disc_acc_real, disc_acc_fake = train_disc(gen, disc, cfg)
             gen_loss, aux_loss1, aux_loss2, aux_loss3 = train_gen(gen, gan, cfg)
 
@@ -231,14 +231,14 @@ def train(gen, disc, aux, gan, cfg):
             print(f"{epoch} {i}/{steps_per_epoch}: d_loss {disc_loss_real:.3f}/{disc_loss_fake:.3f}, d_acc {disc_acc_real:.3f}/{disc_acc_fake:.3f}, gan_loss {gen_loss:.3f}/{aux_loss1:.3f}/{aux_loss2:.3f}/{aux_loss3:.3f}")
 
         with writer.as_default():
-            tf.summary.scalar("disc_loss_real", np.mean(list_disc_loss_real))
-            tf.summary.scalar("disc_loss_fake", np.mean(list_disc_loss_fake))
-            tf.summary.scalar("disc_acc_real", np.mean(list_disc_acc_real))
-            tf.summary.scalar("disc_acc_fake", np.mean(list_disc_acc_fake))
-            tf.summary.scalar("gen_loss", np.mean(list_gen_loss))
-            tf.summary.scalar("aux_loss_categorical", np.mean(list_aux_loss1))
-            tf.summary.scalar("aux_loss_continuous1", np.mean(list_aux_loss2))
-            tf.summary.scalar("aux_loss_continuous2", np.mean(list_aux_loss3))
+            tf.summary.scalar("disc_loss_real", np.mean(list_disc_loss_real), step=epoch)
+            tf.summary.scalar("disc_loss_fake", np.mean(list_disc_loss_fake), step=epoch)
+            tf.summary.scalar("disc_acc_real", np.mean(list_disc_acc_real), step=epoch)
+            tf.summary.scalar("disc_acc_fake", np.mean(list_disc_acc_fake), step=epoch)
+            tf.summary.scalar("gen_loss", np.mean(list_gen_loss), step=epoch)
+            tf.summary.scalar("aux_loss_categorical", np.mean(list_aux_loss1), step=epoch)
+            tf.summary.scalar("aux_loss_continuous1", np.mean(list_aux_loss2), step=epoch)
+            tf.summary.scalar("aux_loss_continuous2", np.mean(list_aux_loss3), step=epoch)
         summarize_performance(gen, cfg, epoch)
 
 def prep():
