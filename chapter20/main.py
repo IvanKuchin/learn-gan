@@ -232,7 +232,7 @@ def main():
 
     cfg = {
         "batch": 100,
-        "epochs": 20,
+        "epochs": 50,
         "latent_dims": 100,
         "dataset_unsupervised": load_unsupervised_dataset(),
         "dataset_supervised": load_supervised_dataset(n_samples=100, n_classes=10)
