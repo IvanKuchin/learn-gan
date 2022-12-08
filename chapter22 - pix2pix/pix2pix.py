@@ -2,6 +2,7 @@ import datetime
 import os.path
 
 import tensorflow as tf
+import tensorflow_addons as tfa
 import numpy as np
 from matplotlib import pyplot
 
@@ -85,7 +86,8 @@ def downsample_block(layer_in, n_filters, bn=True):
     init = tf.keras.initializers.RandomNormal(stddev=0.02)
     block = tf.keras.layers.Conv2D(n_filters, (4, 4), strides=(2, 2), padding="same", kernel_initializer=init)(layer_in)
     if bn:
-        block = tf.keras.layers.BatchNormalization()(block)
+        # block = tf.keras.layers.BatchNormalization()(block, training=True)
+        block = tfa.layers.InstanceNormalization()(block)
     block = tf.keras.layers.LeakyReLU(alpha=0.2)(block)
     return block
 
@@ -93,9 +95,10 @@ def downsample_block(layer_in, n_filters, bn=True):
 def upsample_block(layer_in, skip_in, n_filters, dropout=True):
     init = tf.keras.initializers.RandomNormal(stddev=0.2)
     conv = tf.keras.layers.Conv2DTranspose(n_filters, (4, 4), strides=(2, 2), padding="same", kernel_initializer=init)(layer_in)
-    bn = tf.keras.layers.BatchNormalization()(conv)
+    # bn = tf.keras.layers.BatchNormalization()(conv, training=True)
+    bn = tfa.layers.InstanceNormalization()(conv)
     if dropout:
-        bn = tf.keras.layers.Dropout(0.5)(bn)
+        bn = tf.keras.layers.Dropout(0.5)(bn, training=True)
     concat = tf.keras.layers.Concatenate()([bn, skip_in])
     act = tf.keras.layers.ReLU()(concat)
     return act
@@ -210,7 +213,7 @@ def main():
     prep("progress")
     cfg = {
         "epochs": 100,
-        "batch": 1,
+        "batch": 8,
         "dataset": load_ds("train.npy")
     }
     print(f"dataset shape is {cfg['dataset'].shape}")
