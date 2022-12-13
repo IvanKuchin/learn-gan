@@ -183,8 +183,8 @@ def summarize_performance(gen_AB, gen_BA, dsA, dsB, epoch):
 
     save_images(fakeA, f"a_{epoch}")
     save_images(fakeB, f"b_{epoch}")
-    gen_AB.save(f"progress/{epoch:03d}.h5")
-    gen_BA.save(f"progress/{epoch:03d}.h5")
+    gen_AB.save(f"progress/ab_{epoch}.h5")
+    gen_BA.save(f"progress/ba_{epoch}.h5")
     pass
 
 
