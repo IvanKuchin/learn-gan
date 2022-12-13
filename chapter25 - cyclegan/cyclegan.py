@@ -22,6 +22,7 @@ def save_images(images, name):
     edge = int(np.sqrt(images.shape[0]))
     min, max = images.min(), images.max()
     images = (images - min) / (max - min)
+    pyplot.figure(figsize=(20, 20), dpi=240)
     for i in range(edge**2):
         pyplot.subplot(edge, edge, i+1)
         pyplot.axis(False)
