@@ -186,6 +186,8 @@ def summarize_performance(gen_AB, gen_BA, dsA, dsB, epoch):
 
 
 def train(gen_AB, gen_BA, disc_A, disc_B, gan_AB, gan_BA, cfg):
+    writer = define_writer()
+
     batch = cfg["batch"]
     ds_size = np.max([cfg["dataset"][0].shape[0], cfg["dataset"][1].shape[0]])
     steps_per_epoch = ds_size // batch
@@ -194,6 +196,12 @@ def train(gen_AB, gen_BA, disc_A, disc_B, gan_AB, gan_BA, cfg):
     Yfake = generate_yfake(disc_A, batch)
 
     for epoch in range(cfg["epochs"]):
+        list_loss_discA_real = list()
+        list_loss_discA_fake = list()
+        list_loss_discB_real = list()
+        list_loss_discB_fake = list()
+        list_loss_genAB = list()
+        list_loss_genBA = list()
         for step in range(steps_per_epoch):
             XrealA = generate_real_samples(cfg["dataset"][0], batch)
             XrealB = generate_real_samples(cfg["dataset"][1], batch)
@@ -211,14 +219,28 @@ def train(gen_AB, gen_BA, disc_A, disc_B, gan_AB, gan_BA, cfg):
 
             print(f"{epoch} {step:3d}/{steps_per_epoch}: dA {loss_discA_real:.3f}/{loss_discA_fake:.3f} dB {loss_discB_real:.3f}/{loss_discB_fake:.3f} gan {loss_genAB:.3f}/{loss_genBA:.3f}")
 
+            list_loss_discA_real.append(loss_discA_real)
+            list_loss_discA_fake.append(loss_discA_fake)
+            list_loss_discB_real.append(loss_discB_real)
+            list_loss_discB_fake.append(loss_discB_fake)
+            list_loss_genAB.append(loss_genAB)
+            list_loss_genBA.append(loss_genBA)
+
         summarize_performance(gen_AB, gen_BA, cfg["dataset"][0], cfg["dataset"][1], f"{epoch:03d}")
+        with writer.as_default():
+            tf.summary.scalar("loss_discA_real", np.mean(list_loss_discA_real), step=epoch)
+            tf.summary.scalar("loss_discA_fake", np.mean(list_loss_discA_fake), step=epoch)
+            tf.summary.scalar("loss_discB_real", np.mean(list_loss_discB_real), step=epoch)
+            tf.summary.scalar("loss_discB_fake", np.mean(list_loss_discB_fake), step=epoch)
+            tf.summary.scalar("loss_genAB", np.mean(list_loss_genAB), step=epoch)
+            tf.summary.scalar("loss_genBA", np.mean(list_loss_genBA), step=epoch)
     pass
 
 
 def main():
     prep()
     cfg = {
-        "batch": 1,
+        "batch": 8,
         "epochs": 100,
         "dataset": load_dataset()
     }
